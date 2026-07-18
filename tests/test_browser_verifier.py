@@ -75,6 +75,7 @@ require('./provably_fair_webapp/verifier.js');
         self.assertNotIn("/api/provably-fair/verify", page)
         self.assertIn("ProvablyFair.verifyRecord", page)
         self.assertIn("Download verifier source", page)
+        self.assertIn("https://github.com/axomcs/axom-provably-fair", page)
 
     def test_horse_browser_verifies_seed_binding_result_and_payout(self):
         javascript = r"""
