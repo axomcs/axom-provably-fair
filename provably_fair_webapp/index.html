@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Axom · Provably Fair</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="./verifier.js"></script>
+  <style>
+    :root{--bg:#090d12;--card:#111821;--line:#25303c;--ink:#f5f7fa;--muted:#8d9aa8;--gold:#d7ff44;--good:#5ee3a2;--bad:#ff6f7d;--warn:#ffd66b;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -20%,#24311e 0,transparent 38%),var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,sans-serif}main{width:min(920px,100%);margin:auto;padding:28px 18px 72px}
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:26px}.mark{display:grid;place-items:center;width:42px;height:42px;border:1px solid #435125;border-radius:13px;background:#1a2115;color:var(--gold);font-weight:900}.brand h1{font-size:18px;margin:0}.brand p{margin:1px 0 0;color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase}.intro{margin-bottom:18px}.intro h2{font-size:clamp(28px,7vw,48px);line-height:1.05;letter-spacing:-.045em;margin:0 0 10px}.intro p{color:var(--muted);max-width:690px;margin:0}
+    .panel{background:color-mix(in srgb,var(--card) 94%,transparent);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 22px 70px #0008}.loader{display:flex;gap:10px;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--line)}.loader input{flex:1}.loader button{width:auto;margin:0;white-space:nowrap}.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.wide{grid-column:1/-1}label{display:block;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.04em;margin-bottom:6px;text-transform:uppercase}
+    input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:#0b1118;color:var(--ink);padding:12px 13px;font:14px var(--mono);outline:none}select{font-family:inherit}textarea{min-height:92px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:#6d8130;box-shadow:0 0 0 3px #d7ff4415}button,.button{border:0;border-radius:12px;padding:13px 17px;background:var(--gold);color:#151a09;font-weight:900;font-size:14px;cursor:pointer;text-decoration:none;text-align:center}button:disabled{opacity:.55;cursor:wait}.verify{width:100%;margin-top:18px}
+    .status{display:none;margin-top:18px;border:1px solid var(--line);border-radius:16px;padding:17px}.status.show{display:block}.status.good{border-color:#2e7358;background:#10241d}.status.bad{border-color:#813c47;background:#281419}.status.warn{border-color:#7d6b30;background:#26200e}.status h3{margin:0 0 4px}.status>p{margin:0;color:var(--muted)}.checks{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}.check{background:#090e14;border:1px solid var(--line);border-radius:10px;padding:11px;font-weight:800;font-size:12px}.check.yes{color:var(--good);border-color:#285b49}.check.no{color:var(--bad);border-color:#63313a}.check.na{color:var(--warn);border-color:#685c2e}.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.result{background:#090e14;border-radius:11px;padding:12px;overflow:auto}.result strong{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;margin-bottom:6px}.result pre{margin:0;max-height:330px;overflow:auto;font:12px/1.55 var(--mono);white-space:pre-wrap;word-break:break-word}.actions{display:none;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.actions.show{display:grid}.actions button,.actions .button{margin:0;background:#1d2731;color:var(--ink);border:1px solid var(--line);padding:11px}.protocol{margin-top:16px;color:var(--muted);font-size:12px;text-align:center}.protocol a{color:var(--gold)}.loading{color:var(--gold)}
+    @media(max-width:680px){main{padding-top:20px}.grid,.compare{grid-template-columns:1fr}.wide{grid-column:auto}.panel{padding:15px}.intro h2{font-size:35px}.checks{grid-template-columns:1fr 1fr}.actions{grid-template-columns:1fr}.loader{flex-direction:column}.loader button{width:100%}}
+  </style>
+</head>
+<body>
+<main>
+  <div class="brand"><div class="mark">A</div><div><h1>AXOM CASINO</h1><p>Independent browser verifier</p></div></div>
+  <section class="intro"><h2>Trust the proof.<br>Replay the result.</h2><p>The cryptography, game mapping, and payout checks run locally with Web Crypto. The backend only supplies the stored bet record; after it loads, verification needs no server connection.</p></section>
+  <section class="panel">
+    <div class="loader"><input id="betId" aria-label="Bet ID" placeholder="Enter Bet ID"><button id="load" type="button">Load proof</button></div>
+    <form id="form">
+      <div class="grid">
+        <div><label for="game">Game</label><select id="game" required></select></div>
+        <div><label for="fairnessVersion">Fairness version</label><select id="fairnessVersion"><option value="pf-v1">pf-v1</option><option value="hmac-sha256-v1">hmac-sha256-v1 (legacy)</option></select></div>
+        <div class="wide"><label for="gameVersion">Game algorithm version</label><input id="gameVersion" autocomplete="off" required></div>
+        <div class="wide"><label for="serverSeed">Revealed server seed</label><input id="serverSeed" autocomplete="off" required></div>
+        <div class="wide"><label for="serverHash">Committed SHA-256 hash</label><input id="serverHash" autocomplete="off" minlength="64" maxlength="64" required></div>
+        <div class="wide"><label for="clientSeed">Client seed</label><input id="clientSeed" autocomplete="off" required></div>
+        <div><label for="nonce">Nonce</label><input id="nonce" type="number" min="0" step="1" value="0" required></div>
+        <div><label for="cursor">Starting cursor</label><input id="cursor" type="number" min="0" step="1" value="0" required></div>
+        <div class="wide"><label for="proof">Stored first HMAC block / proof</label><input id="proof" autocomplete="off" minlength="64" maxlength="64" required></div>
+        <div><label for="params">Game parameters · JSON</label><textarea id="params">{}</textarea></div>
+        <div><label for="recorded">Recorded result · JSON</label><textarea id="recorded">{}</textarea></div>
+        <div><label for="payout">Recorded payout (optional)</label><input id="payout" type="number" step="any"></div>
+        <div><label for="payoutContext">Payout rules · JSON (optional)</label><textarea id="payoutContext">{}</textarea></div>
+      </div>
+      <button class="verify" id="verify" type="submit">Verify locally</button>
+    </form>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+    <div class="actions" id="actions"><button id="copy" type="button">Copy verification data</button><button id="export" type="button">Export JSON</button><button id="share" type="button">Copy share link</button></div>
+  </section>
+  <div class="protocol">Protocol: domain-separated HMAC-SHA256 + rejection sampling · <a href="../provably_fair/specification.md" target="_blank">Algorithm specification</a> · <a href="./verifier.js" download>Download verifier source</a></div>
+</main>
+<script>
+  const $=id=>document.getElementById(id), form=$("form"), status=$("status"), verifyButton=$("verify"), actions=$("actions");
+  const pretty=value=>JSON.stringify(value,null,2), escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+  let loadedRecord=null, lastVerification=null;
+  function parseObject(id, optional=false){const raw=$(id).value.trim();if(!raw&&optional)return null;const parsed=JSON.parse(raw||"{}");if(!parsed||Array.isArray(parsed)||typeof parsed!=="object")throw new Error(`${id} must be a JSON object`);return parsed}
+  function setGameVersion(){const game=$("game").value, fairness=$("fairnessVersion").value;$("gameVersion").value=fairness==="pf-v1"?ProvablyFair.GAME_VERSIONS[game]:`${game}-legacy-v1`}
+  function manualRecord(){const payout=$("payout").value.trim();return {game:$("game").value,server_seed:$("serverSeed").value,server_seed_hash:$("serverHash").value,client_seed:$("clientSeed").value,nonce:Number($("nonce").value),cursor:Number($("cursor").value),fairness_version:$("fairnessVersion").value,game_algorithm_version:$("gameVersion").value,generated_random_values:{proof:$("proof").value.trim()},params:parseObject("params"),recorded_result:parseObject("recorded"),payout:payout===""?null:Number(payout),payout_context:parseObject("payoutContext",true)} }
+  function fill(record){const game=ProvablyFair.normalizeGame(record.game);$("game").value=game;$("fairnessVersion").value=record.fairness_version||record.algorithm||"hmac-sha256-v1";$("gameVersion").value=record.game_algorithm_version||($("fairnessVersion").value==="pf-v1"?ProvablyFair.GAME_VERSIONS[game]:`${game}-legacy-v1`);$("serverSeed").value=record.server_seed||"";$("serverHash").value=record.server_seed_hash||"";$("clientSeed").value=record.client_seed||"";$("nonce").value=record.nonce??0;$("cursor").value=record.cursor??0;$("proof").value=record.generated_random_values?.proof||record.hash||"";$("params").value=pretty(record.params||{});$("recorded").value=pretty(record.recorded_result||{});$("payout").value=record.payout??"";$("payoutContext").value=pretty(record.payout_context||{})}
+  const checkLabel=(name,value)=>`<div class="check ${value===true?'yes':value===false?'no':'na'}">${value===true?'✓':value===false?'✕':'—'} ${name}<br>${value===true?'Verified':value===false?'Mismatch':'Not recorded'}</div>`;
+  function render(result){lastVerification=result;const ok=result.verified, incomplete=!result.complete;status.className=`status show ${ok?'good':incomplete?'warn':'bad'}`;status.innerHTML=`<h3>${ok?'✓ VERIFIED':incomplete?'Verification incomplete':'✕ VERIFICATION FAILED'}</h3><p>${ok?'All four independent checks passed.':incomplete?'This record lacks data needed for every mandatory check.':'One or more stored values could not be reproduced.'}</p><div class="checks">${checkLabel('Seed',result.checks.seed)}${checkLabel('Randomness',result.checks.randomness)}${checkLabel('Game',result.checks.game)}${checkLabel('Payout',result.checks.payout)}</div><div class="compare"><div class="result"><strong>Locally generated</strong><pre>${escapeHtml(pretty(result.generated))}</pre></div><div class="result"><strong>Stored result</strong><pre>${escapeHtml(pretty({outcome:result.recorded,payout:result.recorded_payout}))}</pre></div></div>${result.payout_details?.errors?.length?`<p style="margin-top:12px;color:var(--bad)">${result.payout_details.errors.map(escapeHtml).join('<br>')}</p>`:''}`;actions.classList.add("show")}
+  async function verify(record){verifyButton.disabled=true;verifyButton.textContent="Replaying locally…";try{const result=await ProvablyFair.verifyRecord(record);render(result);return result}catch(error){status.className="status show bad";status.innerHTML=`<h3>Could not verify</h3><p>${escapeHtml(error.message)}</p>`;actions.classList.remove("show");throw error}finally{verifyButton.disabled=false;verifyButton.textContent="Verify locally"}}
+  form.addEventListener("submit",event=>{event.preventDefault();loadedRecord={...(loadedRecord||{}),...manualRecord()};verify(loadedRecord).catch(()=>{})});
+  async function loadBet(id){id=String(id||"").trim();if(!id)throw new Error("Enter a Bet ID");$("load").disabled=true;status.className="status show";status.innerHTML='<h3 class="loading">Loading immutable bet data…</h3>';try{const response=await fetch(`/api/provably-fair/bets/${encodeURIComponent(id)}`);const data=await response.json();if(!response.ok)throw new Error(data.detail||"Bet not found");loadedRecord=data.record;$("betId").value=loadedRecord.bet_id||loadedRecord.token||id;fill(loadedRecord);await verify(loadedRecord)}finally{$("load").disabled=false}}
+  $("load").addEventListener("click",()=>loadBet($("betId").value).catch(error=>{status.className="status show bad";status.innerHTML=`<h3>Could not load proof</h3><p>${escapeHtml(error.message)}</p>`}));
+  $("game").addEventListener("change",()=>{$("params").value=pretty(ProvablyFair.GAME_SCHEMAS[$("game").value].params);setGameVersion()});$("fairnessVersion").addEventListener("change",setGameVersion);
+  async function copyText(text,label){await navigator.clipboard.writeText(text);const old=status.querySelector("p")?.textContent||"";if(status.querySelector("p"))status.querySelector("p").textContent=`${label} copied. ${old}`}
+  $("copy").addEventListener("click",()=>copyText(pretty({record:loadedRecord||manualRecord(),verification:lastVerification}),"Verification data").catch(()=>{}));
+  $("export").addEventListener("click",()=>{const blob=new Blob([pretty({record:loadedRecord||manualRecord(),verification:lastVerification})],{type:"application/json"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`provably-fair-${$("betId").value||"manual"}.json`;link.click();URL.revokeObjectURL(link.href)});
+  $("share").addEventListener("click",()=>{const url=new URL(location.href);const id=$("betId").value.trim();if(id)url.searchParams.set("bet_id",id);copyText(url.toString(),"Share link").catch(()=>{})});
+  async function boot(){window.Telegram?.WebApp?.ready();window.Telegram?.WebApp?.expand();$("game").innerHTML=Object.entries(ProvablyFair.GAME_SCHEMAS).filter(([,schema])=>!schema.externally_resolved).map(([id,schema])=>`<option value="${id}">${escapeHtml(schema.label)}</option>`).join("");$("params").value=pretty(ProvablyFair.GAME_SCHEMAS.roulette.params);setGameVersion();const query=new URLSearchParams(location.search);let bet=query.get("bet_id")||query.get("bet")||window.Telegram?.WebApp?.initDataUnsafe?.start_param||"";if(bet.startsWith("verify_"))bet=bet.slice(7);if(bet){$("betId").value=bet;try{await loadBet(bet)}catch(error){status.className="status show bad";status.innerHTML=`<h3>Could not load proof</h3><p>${escapeHtml(error.message)}</p>`}}}
+  boot();
+</script>
+</body>
+</html>
