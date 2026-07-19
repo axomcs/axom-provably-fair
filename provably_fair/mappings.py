@@ -27,6 +27,7 @@ GAME_ALIASES = {
     "coin_flip": "coinflip",
     "coin flip": "coinflip",
     "black jack": "blackjack",
+    "blackjack (split)": "blackjack",
     "blackjack split": "blackjack",
     "blackjack_split": "blackjack",
     "russian roulette": "revolver",

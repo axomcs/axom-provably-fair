@@ -9,8 +9,11 @@ from provably_fair import (
     FairInputs,
     FairRandom,
     GAME_SCHEMAS,
+    create_verification_token,
     generate_outcome,
     hash_server_seed,
+    normalize_game,
+    verification_token_game,
     verify,
 )
 
@@ -25,6 +28,29 @@ INPUTS = FairInputs(
 
 
 class ProvablyFairTests(unittest.TestCase):
+    def test_current_proof_tokens_are_unique_and_game_bound(self):
+        mines_token = create_verification_token("mines")
+        roulette_token = create_verification_token("roulette")
+        self.assertNotEqual(mines_token, create_verification_token("mines"))
+        self.assertEqual(verification_token_game(mines_token), "mines")
+        self.assertEqual(verification_token_game(roulette_token), "roulette")
+        self.assertIsNone(verification_token_game("provablyfair_2"))
+        self.assertIsNone(verification_token_game("pf_mines_not-random"))
+
+    def test_all_published_game_labels_normalize_to_their_mapping(self):
+        labels = {
+            "Roulette": "roulette", "Coinflip": "coinflip",
+            "Blackjack": "blackjack", "Blackjack (Split)": "blackjack",
+            "Limbo": "limbo", "Wheel": "wheel",
+            "Russian Roulette": "revolver", "Plinko": "plinko",
+            "Crash": "crash", "Mines": "mines", "Ladder": "ladder",
+            "Money Tree": "money_tree", "Tower": "tower",
+            "Jackpot": "jackpot", "Horse": "horse",
+        }
+        for label, expected in labels.items():
+            with self.subTest(label=label):
+                self.assertEqual(normalize_game(label), expected)
+
     def test_every_mapping_is_deterministic_and_json_serializable(self):
         for game in sorted(GAME_SCHEMAS):
             with self.subTest(game=game):

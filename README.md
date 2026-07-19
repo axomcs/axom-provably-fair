@@ -16,8 +16,10 @@ by Telegram and are intentionally outside the Axom-generated protocol.
 - [`provably_fair_webapp/verifier.js`](provably_fair_webapp/verifier.js) —
   dependency-free browser verifier.
 - [`provably_fair_webapp/index.html`](provably_fair_webapp/index.html) — manual
-  verification interface. When served by Axom, it can also load immutable bet
-  records by ID.
+  verification interface. Axom's compact `/v/<proof-id>` pages embed the
+  immutable public record in the initial document, so Cloudflare or WebView API
+  challenges cannot interrupt local verification. Mines and Tower proofs also
+  include visual seed-derived board replays.
 - [`provably_fair/`](provably_fair/) — Python reference implementation.
 - [`tests/`](tests/) — fixed protocol vectors, deterministic mapping tests, and
   JavaScript/Python parity checks.
@@ -38,6 +40,9 @@ block[cursor] = HMAC-SHA256(
 Consecutive 32-byte blocks form the random byte stream. Bounded integers use
 rejection sampling; floating-point values use 52 random bits. Game mappings
 consume that stream sequentially and are locked by explicit algorithm version.
+Current proof IDs bind the game name to 128 bits of independent random entropy,
+for example `pf_mines_<32 hex characters>`; gameplay nonces are never reused as
+public proof identifiers.
 
 ## Run the tests
 

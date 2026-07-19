@@ -548,8 +548,9 @@
   }
 
   async function verifyRecord(record) {
+    const game = normalizeGame(record.game);
     const fairnessVersion = record.fairness_version || record.algorithm || LEGACY_FAIRNESS_VERSION;
-    const generated = await generateOutcome(record.game, {
+    const generated = await generateOutcome(game, {
       server_seed: record.server_seed, client_seed: record.client_seed,
       nonce: Number(record.nonce), cursor: Number(record.cursor || 0), fairness_version: fairnessVersion,
     }, record.params || {}, record.game_algorithm_version || null);
@@ -562,14 +563,14 @@
     );
     let outcomeMatches = hasRecordedResult ? partialEqual(generated.outcome, record.recorded_result) : null;
     const payout = verifyPayout(record.payout_context, record.payout, generated.outcome, record);
-    if (record.game && normalizeGame(record.game) === "blackjack" && payout.details?.matches === false) outcomeMatches = false;
+    if (game === "blackjack" && payout.details?.matches === false) outcomeMatches = false;
     const checks = {
       seed: commitmentMatches, randomness: randomnessMatches,
       game: outcomeMatches, payout: payout.matches,
     };
     const verified = Object.values(checks).every(value => value === true);
     return {
-      verified, complete: Object.values(checks).every(value => value !== null), checks,
+      game, verified, complete: Object.values(checks).every(value => value !== null), checks,
       commitment_matches: commitmentMatches, randomness_matches: randomnessMatches,
       outcome_matches: outcomeMatches, payout_matches: payout.matches,
       generated, recorded: record.recorded_result, recorded_payout: record.payout,
