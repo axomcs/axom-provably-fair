@@ -23,6 +23,7 @@ from .mappings import (
     normalize_game,
 )
 from .verifier import VerificationResult, verify
+from .tokens import create_verification_token, verification_token_game
 
 __all__ = [
     "ALGORITHM",
@@ -34,10 +35,12 @@ __all__ = [
     "LEGACY_FAIRNESS_VERSION",
     "SeedValidationError",
     "VerificationResult",
+    "create_verification_token",
     "generate_outcome",
     "hash_server_seed",
     "normalize_game",
     "validate_inputs",
     "verify",
+    "verification_token_game",
     "verify_server_seed_hash",
 ]
